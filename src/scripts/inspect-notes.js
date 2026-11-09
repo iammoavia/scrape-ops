@@ -11,6 +11,7 @@ function inspectNotes() {
     console.log('='.repeat(70));
     console.log(`Database Path     : ${config.databasePath}`);
     console.log(`Total Unique Notes: ${stats.notesCount}`);
+    console.log(`Images Downloaded : ${stats.notesWithLocalImages} of ${stats.notesCount}`);
     console.log(`Pending Scrapes   : ${stats.pendingNotesCount} (ready for note-detail scraper expansion)`);
     console.log(`Scraped Notes     : ${stats.notesCount - stats.pendingNotesCount}`);
     console.log('-'.repeat(70));
@@ -29,7 +30,8 @@ function inspectNotes() {
       sampleNotes.forEach((n, idx) => {
         console.log(`\n[#${n.id}] ${n.name} (Group: ${n.group_name || 'Uncategorized'})`);
         console.log(`  Link           : ${n.link}`);
-        console.log(`  Image          : ${n.image || '(none)'}`);
+        console.log(`  Remote Image   : ${n.image || '(none)'}`);
+        console.log(`  Local Image    : ${n.local_image_path || '(Not downloaded yet)'}`);
         console.log(`  Detail Scraped : ${n.detail_scraped ? 'YES' : 'NO (Pending)'}`);
         console.log(`  Created At     : ${n.created_at}`);
       });
@@ -51,4 +53,3 @@ function inspectNotes() {
 }
 
 inspectNotes();
-

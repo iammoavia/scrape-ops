@@ -9,6 +9,7 @@
     "start:axios": "node src/main.js --engine=axios",
     "start:puppeteer": "node src/main.js --engine=puppeteer",
     "scrape:notes": "node src/main.js --url=https://www.fragrantica.com/notes/ --engine=puppeteer",
+    "download:images": "node src/scripts/download-images.js",
     "inspect:notes": "node src/scripts/inspect-notes.js",
     "inspect:db": "node src/scripts/inspect-db.js"
   },

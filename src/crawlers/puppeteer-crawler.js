@@ -1,6 +1,7 @@
 import { PuppeteerCrawler } from 'crawlee';
 import * as cheerio from 'cheerio';
 import { FragranticaExtractor } from '../extractors/fragrantica.js';
+import { downloadImage, downloadImageBatch } from '../extractors/base.js';
 
 /**
  * Creates and configures a Crawlee PuppeteerCrawler instance.
@@ -71,6 +72,31 @@ export function createPuppeteerCrawler({ storage, config, onComplete }) {
       // Part 1: Persist notes to SQLite with unique constraints
       let notesResult = null;
       if (extractedData.pageType === 'notes' && extractedData.content?.notes?.length > 0) {
+        // Download images if enabled in configuration
+        if (config.downloadImages) {
+          log.info(`[Images] Downloading images for ${extractedData.content.notes.length} notes...`);
+          const itemsToDownload = extractedData.content.notes.map((n) => ({
+            url: n.image,
+            prefix: 'note',
+            id: n.noteId,
+            slug: n.slug,
+          }));
+
+          const downloadResults = await downloadImageBatch(itemsToDownload, {
+            targetDir: config.notesImagesDir,
+            concurrency: config.imageConcurrency,
+          });
+
+          // Attach relative localImagePath to each note
+          extractedData.content.notes.forEach((note, idx) => {
+            const res = downloadResults[idx];
+            if (res && res.success) {
+              note.localImagePath = res.relativePath;
+            }
+          });
+          log.info(`[Images] Completed downloading note images.`);
+        }
+
         notesResult = storage.saveNotes(extractedData.content.notes);
         log.info(
           `[SQLite] Notes Catalog: Processed ${notesResult.total} notes (${notesResult.inserted} inserted, ${notesResult.updated} updated)`
@@ -80,11 +106,25 @@ export function createPuppeteerCrawler({ storage, config, onComplete }) {
       // Part 2: Persist fragrance if scraping a perfume detail page
       let fragranceId = null;
       if (extractedData.pageType === 'perfume' && extractedData.content?.perfumeName) {
+        let localImagePath = null;
+        if (config.downloadImages && extractedData.content?.image) {
+          log.info(`[Images] Downloading perfume bottle image...`);
+          const imgRes = await downloadImage(extractedData.content.image, {
+            targetDir: config.fragrancesImagesDir,
+            prefix: 'fragrance',
+            slug: extractedData.content.perfumeName,
+          });
+          if (imgRes.success) {
+            localImagePath = imgRes.relativePath;
+          }
+        }
+
         fragranceId = storage.saveFragrance({
           name: extractedData.content.perfumeName,
           brand: extractedData.content.brand,
           link: request.url,
           image: extractedData.content.image,
+          localImagePath,
           rating: extractedData.content.rating,
           votesCount: extractedData.content.votesCount,
           description: extractedData.content.description,

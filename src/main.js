@@ -78,8 +78,11 @@ async function main() {
           console.log('\nSample Saved Notes (First 5):');
           data.content.sampleNotes.slice(0, 5).forEach((n, idx) => {
             console.log(`  ${idx + 1}. [${n.group || 'General'}] ${n.name}`);
-            console.log(`     Link  : ${n.link}`);
-            console.log(`     Image : ${n.image || '(No image)'}`);
+            console.log(`     Link        : ${n.link}`);
+            console.log(`     Remote Image: ${n.image || '(No image)'}`);
+            if (n.localImagePath) {
+              console.log(`     Local Image : ${n.localImagePath}`);
+            }
           });
         }
       }
@@ -111,7 +114,7 @@ async function main() {
     const stats = storage.getStats();
     console.log('-'.repeat(70));
     console.log(`Database Totals :`);
-    console.log(`  • Notes       : ${stats.notesCount} unique note(s) (${stats.pendingNotesCount} pending detail scrape)`);
+    console.log(`  • Notes       : ${stats.notesCount} unique note(s) (${stats.notesWithLocalImages || 0} with local images, ${stats.pendingNotesCount} pending detail scrape)`);
     console.log(`  • Fragrances  : ${stats.fragrancesCount} fragrance record(s)`);
     console.log(`  • Raw Pages   : ${stats.pageCount} page(s) cached`);
     console.log(`  • Records     : ${stats.recordCount} structured record(s)`);

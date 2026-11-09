@@ -12,12 +12,14 @@ process.env.CRAWLEE_MEMORY_MBYTES = process.env.CRAWLEE_MEMORY_MBYTES || '8192';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..', '..');
 
-// Helper to parse CLI arguments like --engine=puppeteer or --url=https://...
+// Helper to parse CLI arguments like --engine=puppeteer or --download-images or --url=https://...
 function parseCliArgs() {
   const args = {};
   for (const arg of process.argv.slice(2)) {
     if (arg.startsWith('--')) {
-      const [key, value] = arg.slice(2).split('=');
+      const [rawKey, value] = arg.slice(2).split('=');
+      // Convert kebab-case to camelCase (e.g. download-images -> downloadImages)
+      const key = rawKey.replace(/-([a-z])/g, (_, ch) => ch.toUpperCase());
       args[key] = value === undefined ? true : value;
     }
   }
@@ -43,6 +45,8 @@ function findChromeExecutable() {
   return undefined;
 }
 
+const imagesBaseDir = path.resolve(rootDir, process.env.IMAGES_DIR || './data/images');
+
 export const config = {
   rootDir,
   // Engine can be 'axios' or 'puppeteer' (puppeteer recommended for Fragrantica due to Cloudflare)
@@ -55,6 +59,15 @@ export const config = {
   concurrency: Number(process.env.CONCURRENCY || 1),
   // Database
   databasePath: path.resolve(rootDir, process.env.DATABASE_PATH || './data/scrapes.db'),
+  // Image downloading options
+  downloadImages:
+    cliArgs.downloadImages !== undefined
+      ? cliArgs.downloadImages === true || cliArgs.downloadImages === 'true'
+      : process.env.DOWNLOAD_IMAGES === 'true',
+  imagesDir: imagesBaseDir,
+  notesImagesDir: path.join(imagesBaseDir, 'notes'),
+  fragrancesImagesDir: path.join(imagesBaseDir, 'fragrances'),
+  imageConcurrency: Number(process.env.IMAGE_CONCURRENCY || 5),
   // Puppeteer specific
   puppeteer: {
     headless: process.env.PUPPETEER_HEADLESS !== 'false',
